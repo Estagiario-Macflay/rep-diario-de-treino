@@ -37,6 +37,11 @@
   .creator-credit-mobile{justify-content:center;margin-top:0;padding:16px 0 0;border-top:1px solid #29353d;font-size:12px}
 }
 
+/* Ordem visual fixa mesmo quando o navegador conserva o HTML anterior no cache. */
+.creator-credit .creator-handle svg{order:0!important}
+.creator-credit .creator-handle strong{order:1!important}
+.creator-credit .creator-handle{display:inline-flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important}
+
 /* Evita o zoom automático do Safari ao focar campos menores que 16px. */
 @media (max-width: 850px), (hover: none) and (pointer: coarse) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
