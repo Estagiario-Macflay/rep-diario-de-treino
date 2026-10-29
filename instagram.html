@@ -3,14 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="no-referrer">
-  <meta http-equiv="refresh" content="0;url=https://www.instagram.com/macflayyy/">
-  <title>Instagram — @macflayyy</title>
-  <script>
-    window.location.replace('https://www.instagram.com/macflayyy/');
-  </script>
+  <meta name="theme-color" content="#0d1118">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Instagram de @macflayyy — REP</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}
+    body{min-height:100vh;margin:0;display:grid;place-items:center;padding:24px;background:#0b1017;color:#f1f5f6}
+    main{width:min(100%,520px);padding:32px;border:1px solid #34434c;border-radius:20px;background:#121a23}
+    .brand{font-weight:900;letter-spacing:-.06em;font-size:22px;margin-bottom:28px}.brand span{color:#dfff77}
+    h1{font-size:clamp(26px,5vw,36px);letter-spacing:-.04em;line-height:1.15;margin:0 0 12px}
+    p{color:#b1c1c8;font-size:14px;line-height:1.65;margin:0 0 18px}
+    .handle{color:#dfff77}
+    .buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+    button,a.action{border:1px solid #41505b;border-radius:11px;min-height:44px;padding:12px 16px;font:700 13px system-ui,sans-serif;text-decoration:none;cursor:pointer}
+    a.action{background:#dfff77;color:#172208;border-color:#dfff77}
+    button{background:#182731;color:#e6eef0}
+    .note{border-top:1px solid #2a3942;margin-top:26px;padding-top:18px;color:#8ea2ad;font-size:12px}
+    code{color:#dfff77;white-space:normal;overflow-wrap:anywhere}
+  </style>
 </head>
 <body>
-  <p>Redirecionando para o Instagram de <a href="https://www.instagram.com/macflayyy/">@macflayyy</a>...</p>
+  <main>
+    <div class="brand">REP<span>.</span></div>
+    <h1>Instagram de <span class="handle">@macflayyy</span></h1>
+    <p>Esta página foi aberta em uma nova aba do navegador, sem acionar automaticamente o aplicativo do Instagram.</p>
+    <div class="buttons">
+      <a class="action" href="https://www.instagram.com/macflayyy/" rel="noopener noreferrer">Acessar perfil</a>
+      <button id="copy" type="button">Copiar endereço do perfil</button>
+    </div>
+    <p class="note">Se o botão “Acessar perfil” abrir o aplicativo, desative a captura de links do Instagram no Chrome: abra <code>chrome://apps</code>, entre nas configurações do aplicativo Instagram e selecione “Abrir no navegador Chrome”, caso a opção apareça. A preferência é controlada pelo navegador, não pelo REP.</p>
+  </main>
+  <script>
+    document.getElementById('copy').addEventListener('click', async function () {
+      const value = 'https://www.instagram.com/macflayyy/';
+      try {
+        await navigator.clipboard.writeText(value);
+        this.textContent = 'Endereço copiado!';
+      } catch {
+        window.prompt('Copie o endereço do Instagram:', value);
+      }
+    });
+  </script>
 </body>
 </html>
