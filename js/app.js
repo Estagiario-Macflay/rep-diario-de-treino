@@ -67,6 +67,63 @@
   let restEnd = 0;
   let restTick = null;
   const canVibrate = typeof navigator.vibrate === 'function';
+  let restAudioContext = null;
+
+  // Desbloqueia o áudio durante o toque em "Descanso", exigido pelo Safari e outros navegadores.
+  function armRestAlertAudio() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    try {
+      if (!restAudioContext || restAudioContext.state === 'closed') restAudioContext = new AudioContextClass();
+      if (restAudioContext.state === 'suspended') restAudioContext.resume().catch(() => {});
+      // Fonte muda inicializada no próprio gesto para permitir os bipes ao fim do cronômetro.
+      const oscillator = restAudioContext.createOscillator();
+      const volume = restAudioContext.createGain();
+      volume.gain.value = 0;
+      oscillator.connect(volume);
+      volume.connect(restAudioContext.destination);
+      oscillator.start();
+      oscillator.stop(restAudioContext.currentTime + 0.01);
+    } catch(error) { console.warn('Áudio de descanso indisponível:', error); }
+  }
+
+  function playRestAlertSound() {
+    const context = restAudioContext;
+    if (!context || context.state !== 'running') return false;
+    try {
+      const initialTime = context.currentTime + 0.035;
+      for (let i = 0; i < 3; i++) {
+        const start = initialTime + i * 0.34;
+        const oscillator = context.createOscillator();
+        const volume = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(840, start);
+        volume.gain.setValueAtTime(0.001, start);
+        volume.gain.exponentialRampToValueAtTime(0.085, start + 0.025);
+        volume.gain.setValueAtTime(0.085, start + 0.12);
+        volume.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+        oscillator.connect(volume);
+        volume.connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(start + 0.19);
+      }
+      return true;
+    } catch(error) { console.warn('Falha no aviso sonoro do descanso:', error); return false; }
+  }
+
+  function notifyRestFinished() {
+    if (state.vibrarDescanso === false) return;
+    let didVibrate = false;
+    if (canVibrate) {
+      // Três vibrações distintas, com pausa entre elas, nos navegadores compatíveis.
+      try { didVibrate = navigator.vibrate([300, 180, 300, 180, 300]) === true; }
+      catch(error) { console.warn('Vibração de descanso indisponível:', error); }
+    }
+    // Safari/iOS e outros navegadores sem API: três bipes, nunca uma falsa vibração.
+    if (!didVibrate && !playRestAlertSound()) {
+      toast('Descanso encerrado. Seu navegador bloqueou vibração e som automático.');
+    }
+  }
 
   function saveState() {
     try {localStorage.setItem(STORAGE_KEY,JSON.stringify(state));return true;}
@@ -148,7 +205,7 @@
     }).join('');
     return `${heading('TREINO EM ANDAMENTO',h(draft.sessionName),`${draft.exercises.length} exercícios · os dados são salvos automaticamente`,btn(`${icon('close')} Descartar treino`,'discard','btn-plain'))}
       <div class="training-toolbar"><div class="toolbar-info"><div><strong>${info.percentage}% concluído</strong><small style="display:block">${info.done} de ${info.total} séries</small></div><div><strong>${completeExercises(draft)}/${draft.exercises.length}</strong><small style="display:block">exercícios completos</small></div></div><div class="date-field"><label for="workout-date">Data</label><input id="workout-date" type="date" data-draft-field="date" value="${attr(draft.date)}"></div></div>
-      <div class="training-options"><label class="vibrate-label"><input type="checkbox" id="rest-vibrate-toggle" ${state.vibrarDescanso!==false?'checked':''} ${canVibrate?'':'disabled'}> ${icon('bolt')} Vibrar ao terminar o descanso</label>${canVibrate?'<small>Disponível neste dispositivo, com a página ativa.</small>':'<small>Vibração não suportada neste navegador.</small>'}</div>
+      <div class="training-options"><label class="vibrate-label"><input type="checkbox" id="rest-vibrate-toggle" ${state.vibrarDescanso!==false?'checked':''}> ${icon('bolt')} Alerta ao terminar o descanso</label><small>${canVibrate?'3 vibrações, se permitidas pelo celular.':'Vibração indisponível: 3 bipes como alternativa, se o áudio estiver permitido.'}</small><button type="button" class="btn btn-small btn-plain" data-action="test-rest-alert">Testar alerta</button></div>
       <div class="progress-track" aria-label="Progresso do treino"><div class="progress-fill" style="width:${info.percentage}%"></div></div><div class="progress-caption">${info.total-info.done} séries restantes. Marque cada série conforme terminar.</div>
       <section class="exercise-list">${exercises}</section>
       <section class="session-footer"><label for="workout-note">Anotações do treino (opcional)<textarea id="workout-note" data-draft-field="note" placeholder="Como foi o treino? Alguma observação?">${h(draft.note)}</textarea></label>${btn(`${icon('check')} Salvar treino`,'save-workout','btn-primary')}</section>`;
@@ -333,6 +390,7 @@
   }
   function startRest(seconds) {
     if(!Number.isInteger(seconds) || seconds<1 || seconds>3600){toast('Informe um descanso de 1 a 3600 segundos.');return;}
+    if(state.vibrarDescanso!==false)armRestAlertAudio();
     clearInterval(restInterval);
     restEnd=Date.now()+seconds*1000;
     let element=document.getElementById('rest-timer');
@@ -347,8 +405,7 @@
         finished=true;
         clearInterval(restInterval);
         restInterval=null;
-        // Vibração é uma API opcional, geralmente disponível no Android; pode falhar com a página em segundo plano.
-        if(state.vibrarDescanso!==false && canVibrate){try{navigator.vibrate([250,130,250,130,450]);}catch(error){console.warn('Vibração indisponível:',error);}}
+        notifyRestFinished();
       }
     };
     restTick=tick;
@@ -421,6 +478,12 @@
     if(action==='open-routine'){navigate('routine');return;}
     if(action==='filter-history'){ui.historyFilter=el.dataset.value;render();return;}
     if(action==='close-modal'||action==='close-modal-backdrop'){ui.modal=null;document.getElementById('modal-root').innerHTML='';return;}
+    if(action==='test-rest-alert'){
+      if(state.vibrarDescanso===false){toast('Ative o alerta para testar.');return;}
+      armRestAlertAudio();
+      notifyRestFinished();
+      return;
+    }
     if(action==='stop-rest'){clearInterval(restInterval);restInterval=null;restTick=null;restEnd=0;document.getElementById('rest-timer')?.remove();return;}
     if(action==='rest'){
       const input=el.parentElement.querySelector('[data-rest-seconds]');
