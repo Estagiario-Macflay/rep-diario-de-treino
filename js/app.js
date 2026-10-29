@@ -61,7 +61,7 @@
     } catch (error) { console.warn('Não foi possível recuperar os treinos salvos:',error); return defaultState(); }
   }
   let state = readState();
-  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', modal:null};
+  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', lastAnimatedView:null, modal:null};
   let toastTimeout;
   let restInterval = null;
   let restEnd = 0;
@@ -154,9 +154,12 @@
     document.getElementById('today-label').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
     const app=document.getElementById('app');
     app.innerHTML = ({home:renderHome,training:renderTraining,history:renderHistory,progress:renderProgress,routine:renderRoutine}[ui.view] || renderHome)();
-    app.classList.remove('rep-enter');
-    void app.offsetWidth;
-    app.classList.add('rep-enter');
+    if (ui.lastAnimatedView !== ui.view) {
+      app.classList.remove('rep-enter');
+      void app.offsetWidth;
+      app.classList.add('rep-enter');
+      ui.lastAnimatedView = ui.view;
+    }
     if(ui.modal) renderModal();
   }
   function navigate(view){ui.view=view;render();window.scrollTo({top:0,behavior:'instant'});}
@@ -208,7 +211,7 @@
       `${current?.exercicios.length||0} exercícios · ${h(current?.subtitulo||'Vamos começar?')}`;
     const circlePercent=ongoing && total?Math.round(completed*100/total):0;
     const primaryAction=ongoing?btn(`Continuar treino ${icon('arrow')}`,'resume','btn-primary'):
-      btn(`Começar treino ${icon('arrow')}`,'choose-training','btn-primary');
+      current ? btn(`Começar treino ${icon('arrow')}`,'start','btn-primary',`data-session="${attr(current.id)}"`) : btn('Escolher treino','choose-training','btn-primary');
     return `<section class="hero hero-premium">
       <div class="hero-copy"><div class="eyebrow">${ongoing?'TREINO EM ANDAMENTO':'SEU PRÓXIMO PASSO'}</div>
       <h1>${title}<br><em>${h(current?.nome||'Vamos treinar?')}</em></h1>
