@@ -21,18 +21,16 @@
 .rest-config input{width:75px;min-height:34px;padding:6px 9px;font-size:13px;font-variant-numeric:tabular-nums;text-align:center}
 .rest-timer.rest-finished{background:#ffdf83;color:#24200c}
 @media(max-width:620px){.exercise-actions{width:100%;justify-content:space-between}.rest-config{max-width:100%}.training-options{align-items:flex-start}.rest-timer{bottom:82px;max-width:calc(100vw - 24px);gap:10px;padding:10px 12px}.rest-timer small{font-size:9px}.rest-timer strong{font-size:17px}}
-/* Crédito no menu lateral. */
+/* Crédito do criador: ícone colado ao @, sem deslocamento para o início da linha. */
 .sidebar{overflow-y:auto}
 .sidebar-bottom{flex-shrink:0}
-.creator-credit{display:flex;align-items:center;gap:9px;margin-top:23px;padding-top:17px;border-top:1px solid #29353d;text-decoration:none;color:#90a7b0;font-size:11px;line-height:1.5;transition:color .18s}
-.creator-credit svg{width:18px;height:18px;flex:0 0 18px}
+.creator-credit{display:inline-flex;align-items:center;gap:5px;flex-wrap:nowrap;white-space:nowrap;margin-top:23px;padding-top:17px;border-top:1px solid #29353d;text-decoration:none;color:#90a7b0;font-size:11px;line-height:1.5;transition:color .18s}
+.creator-credit .creator-label{display:inline-block;flex:0 0 auto}
+.creator-credit .creator-handle{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:0 0 auto}
+.creator-credit .creator-handle svg{width:17px;height:17px;flex:0 0 17px;display:block}
 .creator-credit strong{color:#dfff77;font-weight:750}
 .creator-credit:hover{color:#fff}
 .creator-credit:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
-/* Instagram ao lado do perfil e crédito visível no celular. */
-.creator-credit{display:inline-flex;align-items:center;flex-wrap:wrap;column-gap:5px;row-gap:3px}
-.creator-credit .creator-handle{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.creator-credit .creator-handle svg{width:17px;height:17px;flex:0 0 17px;display:block}
 .mobile-creator{display:none}
 @media(max-width:850px){
   .mobile-creator{display:flex;align-items:center;justify-content:center;margin:0 20px 80px;padding:0 12px}
