@@ -365,3 +365,39 @@ button:focus-visible,a:focus-visible {outline:2px solid var(--accent);outline-of
   #app.rep-enter,.tick.checked {animation:none!important}
   .session-card,.stat-card,.exercise-card,.exercise-mini-track span {transition:none!important}
 }
+
+/* Navegação do calendário semanal: semanas anteriores, seguinte e retorno ao presente. */
+.weekly-panel-head {align-items:center}
+.weekly-heading {min-width:0}
+.weekly-heading h2 {line-height:1.2}
+.weekly-date-range {display:block;margin-top:5px;font-size:11px;color:#a4b8b5;line-height:1.3;font-variant-numeric:tabular-nums}
+.weekly-nav {display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-shrink:0}
+.week-nav-button,.week-today-button {
+  display:inline-grid;place-items:center;
+  min-width:40px;height:40px;padding:8px;
+  border:1px solid #445c4f;border-radius:12px;
+  background:#20322d;color:#dfff77;
+  font-size:12px;font-weight:800;line-height:1;
+  transition:background .16s ease, transform .16s ease;
+}
+.week-nav-button svg {width:19px;height:19px}
+.week-today-button {padding:8px 11px;color:#1b2c11;background:#dfff77;border-color:#dfff77}
+.week-nav-button:not(:disabled):hover {background:#2e4937}
+.week-nav-button:not(:disabled):active,.week-today-button:active {transform:scale(.96)}
+.week-nav-button:disabled {opacity:.35;cursor:default}
+.week-nav-button:focus-visible,.week-today-button:focus-visible {outline:2px solid var(--accent);outline-offset:2px}
+.weekly-panel-foot {display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+.weekly-panel-foot .weekly-hint {margin:0;text-align:right}
+@media(max-width:450px){
+  .weekly-panel-head {gap:10px}
+  .weekly-nav {gap:5px}
+  .week-nav-button,.week-today-button {min-width:36px;height:38px;padding:7px;border-radius:11px}
+  .week-today-button {padding:7px 9px}
+  .weekly-heading h2 {font-size:16px}
+  .weekly-date-range {font-size:10px}
+  .weekly-panel-foot {flex-wrap:wrap;gap:7px}
+  .weekly-panel-foot .weekly-hint {font-size:9px;text-align:left}
+}
+@media(prefers-reduced-motion:reduce){
+  .week-nav-button,.week-today-button {transition:none}
+}

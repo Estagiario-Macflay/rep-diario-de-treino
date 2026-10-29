@@ -46,7 +46,9 @@
     shield:'<path d="m12 2 9 4v6c0 6-4 9-9 10-5-1-9-4-9-10V6l9-4z"/>',
     target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
     spark:'<path d="m12 2 2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6z"/>',
-    minus:'<path d="M5 12h14"/>'
+    minus:'<path d="M5 12h14"/>',
+    'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+    'chevron-right':'<path d="m9 18 6-6-6-6"/>'
   };
   const icon = (key) => `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">${icons[key] || icons.info}</svg>`;
 
@@ -61,7 +63,7 @@
     } catch (error) { console.warn('Não foi possível recuperar os treinos salvos:',error); return defaultState(); }
   }
   let state = readState();
-  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', lastAnimatedView:null, modal:null};
+  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', weekOffset:0, lastAnimatedView:null, modal:null};
   let toastTimeout;
   let restInterval = null;
   let restEnd = 0;
@@ -178,21 +180,33 @@
   function renderSessions(){return `<div class="session-grid">${state.sessoes.map(sessionCard).join('')}</div>`;}
   function renderWeekStrip() {
     const now = new Date();
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay()+6)%7),12);
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay()+6)%7) + ui.weekOffset*7, 12);
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+6, 12);
     const todayKey = today();
-    const savedDays = new Set(state.historico.map(r=>r.date));
+    const savedDays = new Set(state.historico.map(record=>record.date));
+    const formatDay = date=>date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const rangeLabel = `${formatDay(monday)} – ${formatDay(sunday)} ${sunday.getFullYear()}`;
     const days = Array.from({length:7}, (_,i) => {
       const date = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i,12);
       const key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-      return {key,number:date.getDate(),trained:savedDays.has(key),today:key===todayKey,weekLabel:['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]};
+      return {key,number:date.getDate(),fullDate:date.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}),trained:savedDays.has(key),today:key===todayKey,weekLabel:['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]};
     });
     const count=days.filter(day=>day.trained).length;
-    return `<section class="weekly-panel" aria-label="Treinos desta semana">
-      <div class="weekly-panel-head"><div><div class="small-eyebrow">SUA CONSTÂNCIA</div><h2>Esta semana</h2></div><span class="weekly-count">${icon('calendar')} ${count} ${count===1?'dia treinado':'dias treinados'}</span></div>
-      <div class="week-days">${days.map(day=>`<div class="week-day ${day.trained?'trained':''} ${day.today?'today':''}" aria-label="${day.weekLabel}, dia ${day.number}${day.trained?', treino registrado':''}${day.today?', hoje':''}">
+    const isCurrentWeek=ui.weekOffset===0;
+    const title=isCurrentWeek?'Esta semana':ui.weekOffset===-1?'Semana passada':`Semana de ${formatDay(monday)}`;
+    return `<section class="weekly-panel" aria-label="Calendário de treinos por semana">
+      <div class="weekly-panel-head">
+        <div class="weekly-heading"><div class="small-eyebrow">SUA CONSTÂNCIA</div><h2>${title}</h2><span class="weekly-date-range" aria-live="polite">${rangeLabel}</span></div>
+        <div class="weekly-nav" role="group" aria-label="Navegar entre semanas">
+          <button type="button" data-action="week-prev" class="week-nav-button" title="Semana anterior" aria-label="Ver semana anterior">${icon('chevron-left')}</button>
+          ${isCurrentWeek?'':`<button type="button" data-action="week-today" class="week-today-button" aria-label="Voltar à semana atual">Hoje</button>`}
+          <button type="button" data-action="week-next" class="week-nav-button" title="Próxima semana" aria-label="Ver próxima semana" ${isCurrentWeek?'disabled':''}>${icon('chevron-right')}</button>
+        </div>
+      </div>
+      <div class="week-days">${days.map(day=>`<div class="week-day ${day.trained?'trained':''} ${day.today?'today':''}" aria-label="${day.weekLabel}, ${day.fullDate}${day.trained?', treino registrado':''}${day.today?', hoje':''}">
         <span class="week-day-label">${day.weekLabel}</span><span class="week-day-number">${day.trained?icon('check'):day.number}</span><span class="week-day-dot"></span>
       </div>`).join('')}</div>
-      <p class="weekly-hint">Cada dia com treino salvo fica marcado em verde.</p>
+      <div class="weekly-panel-foot"><span class="weekly-count">${icon('calendar')} ${count} ${count===1?'dia treinado':'dias treinados'}</span><p class="weekly-hint">Dias com treino registrado ficam em verde.</p></div>
     </section>`;
   }
   function renderHome() {
@@ -592,6 +606,9 @@
     if(action==='open-routine'){navigate('routine');return;}
     if(action==='filter-history'){ui.historyFilter=el.dataset.value;render();return;}
     if(action==='progress-range'){ui.progressRange=['30','90','all'].includes(el.dataset.value)?el.dataset.value:'all';render();return;}
+    if(action==='week-prev'){ui.weekOffset-=1;render();return;}
+    if(action==='week-next'){ui.weekOffset=Math.min(0,ui.weekOffset+1);render();return;}
+    if(action==='week-today'){ui.weekOffset=0;render();return;}
     if(action==='close-modal'||action==='close-modal-backdrop'){ui.modal=null;document.getElementById('modal-root').innerHTML='';return;}
     if(action==='test-rest-alert'){
       if(state.vibrarDescanso===false){toast('Ative o alerta para testar.');return;}
