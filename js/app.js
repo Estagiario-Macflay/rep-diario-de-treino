@@ -395,7 +395,19 @@
     const ios = /iPhone|iPad|iPod/i.test(ua) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const mobile = android || ios || Boolean(navigator.userAgentData?.mobile);
-    if (!mobile) return; // No computador, o próprio link abre uma nova aba.
+    if (!mobile) {
+      // Abre primeiro uma aba vazia do navegador; só depois navega até o Instagram.
+      // Isso reduz a captura automática por apps instalados em navegadores Chromium.
+      event.preventDefault();
+      const tab = window.open('about:blank', '_blank');
+      if (tab) {
+        tab.opener = null;
+        tab.location.replace('https://www.instagram.com/macflayyy/');
+      } else {
+        toast('O navegador bloqueou a nova aba. Permita pop-ups para este site.');
+      }
+      return;
+    }
 
     event.preventDefault();
     const fallbackUrl = 'https://www.instagram.com/macflayyy/';
