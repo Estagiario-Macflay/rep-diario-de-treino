@@ -63,7 +63,7 @@
     } catch (error) { console.warn('Não foi possível recuperar os treinos salvos:',error); return defaultState(); }
   }
   let state = readState();
-  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', weekOffset:0, lastAnimatedView:null, modal:null};
+  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', weekOffset:0, calendarView:'week', monthOffset:0, selectedCalendarDate:'', lastAnimatedView:null, modal:null};
   let toastTimeout;
   let restInterval = null;
   let restEnd = 0;
@@ -178,7 +178,67 @@
     </article>`;
   }
   function renderSessions(){return `<div class="session-grid">${state.sessoes.map(sessionCard).join('')}</div>`;}
+  function renderCalendarTabs() {
+    return `<div class="calendar-tabs" role="tablist" aria-label="Visualização do calendário">
+      <button type="button" role="tab" class="calendar-tab ${ui.calendarView==='week'?'active':''}" aria-selected="${ui.calendarView==='week'}" aria-controls="rep-calendar-panel" data-action="calendar-view" data-value="week">${icon('calendar')} Semana</button>
+      <button type="button" role="tab" class="calendar-tab ${ui.calendarView==='month'?'active':''}" aria-selected="${ui.calendarView==='month'}" aria-controls="rep-calendar-panel" data-action="calendar-view" data-value="month">${icon('layers')} Calendário</button>
+    </div>`;
+  }
+  function renderMonthCalendar() {
+    const now = new Date();
+    const month = new Date(now.getFullYear(), now.getMonth() + ui.monthOffset, 1, 12);
+    const year = month.getFullYear(), monthIndex=month.getMonth();
+    const firstWeekday = (month.getDay()+6)%7;
+    const daysInMonth = new Date(year,monthIndex+1,0,12).getDate();
+    const savedDays = new Set(state.historico.map(record=>record.date));
+    const dateKey = day => `${year}-${String(monthIndex+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const allDays = Array.from({length:daysInMonth},(_,i)=>({number:i+1,key:dateKey(i+1)}));
+    const trainedCount = allDays.filter(day=>savedDays.has(day.key)).length;
+    const monthName = month.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const title = monthName.charAt(0).toUpperCase()+monthName.slice(1);
+    const isCurrent = ui.monthOffset === 0;
+    const selectedDate = allDays.some(day=>day.key===ui.selectedCalendarDate) ? ui.selectedCalendarDate : '';
+    const onSelectedDate = selectedDate ? state.historico.filter(record=>record.date===selectedDate) : [];
+    const details = selectedDate
+      ? `<div class="calendar-day-details" aria-live="polite">
+          <strong>${h(dateText(selectedDate,{weekday:'long',day:'2-digit',month:'long'}))}</strong>
+          ${onSelectedDate.length
+            ? `<div class="calendar-sessions">${onSelectedDate.map(record=>`<div class="calendar-session">${icon('check')} <span>${h(record.sessionName)}</span><small>${doneSets(record)} séries</small></div>`).join('')}</div>`
+            : '<p>Nenhum treino registrado neste dia.</p>'}
+        </div>`
+      : '<p class="calendar-select-hint">Toque em um dia para ver os treinos registrados.</p>';
+    return `<section class="weekly-panel monthly-panel" aria-label="Calendário mensal de treinos">
+      ${renderCalendarTabs()}
+      <div id="rep-calendar-panel" role="tabpanel" aria-label="Calendário mensal">
+        <div class="weekly-panel-head">
+          <div class="weekly-heading"><div class="small-eyebrow">VISÃO MENSAL</div><h2 class="month-heading">${title}</h2></div>
+          <div class="weekly-nav" role="group" aria-label="Navegar pelos meses">
+            <button type="button" data-action="month-prev" class="week-nav-button" aria-label="Ver mês anterior">${icon('chevron-left')}</button>
+            ${isCurrent?'':`<button type="button" data-action="month-today" class="week-today-button" aria-label="Voltar ao mês atual">Hoje</button>`}
+            <button type="button" data-action="month-next" class="week-nav-button" aria-label="Ver próximo mês" ${isCurrent?'disabled':''}>${icon('chevron-right')}</button>
+          </div>
+        </div>
+        <div class="month-calendar-grid" aria-label="${title}">
+          ${['SEG','TER','QUA','QUI','SEX','SÁB','DOM'].map(day=>`<span class="month-day-label" aria-hidden="true">${day}</span>`).join('')}
+          ${Array.from({length:firstWeekday},()=>'<span class="month-day-empty" aria-hidden="true"></span>').join('')}
+          ${allDays.map(day=>{
+            const trained=savedDays.has(day.key);
+            const isToday=day.key===today();
+            const selected=selectedDate===day.key;
+            const fullDate=new Date(year,monthIndex,day.number,12).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+            return `<button type="button" data-action="calendar-select-day" data-date="${day.key}" class="month-day ${trained?'trained':''} ${isToday?'today':''} ${selected?'selected':''}" aria-pressed="${selected}" aria-label="${fullDate}${trained?', treino registrado':''}${isToday?', hoje':''}"><span>${day.number}</span><span class="month-day-dot"></span></button>`;
+          }).join('')}
+        </div>
+        ${details}
+        <div class="weekly-panel-foot">
+          <span class="weekly-count">${icon('calendar')} ${trainedCount} ${trainedCount===1?'dia treinado':'dias treinados'}</span>
+          <p class="weekly-hint">Treinos salvos em verde.</p>
+        </div>
+      </div>
+    </section>`;
+  }
   function renderWeekStrip() {
+    if (ui.calendarView==='month') return renderMonthCalendar();
     const now = new Date();
     const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay()+6)%7) + ui.weekOffset*7, 12);
     const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+6, 12);
@@ -195,6 +255,8 @@
     const isCurrentWeek=ui.weekOffset===0;
     const title=isCurrentWeek?'Esta semana':ui.weekOffset===-1?'Semana passada':`Semana de ${formatDay(monday)}`;
     return `<section class="weekly-panel" aria-label="Calendário de treinos por semana">
+      ${renderCalendarTabs()}
+      <div id="rep-calendar-panel" role="tabpanel" aria-label="Calendário semanal">
       <div class="weekly-panel-head">
         <div class="weekly-heading"><div class="small-eyebrow">SUA CONSTÂNCIA</div><h2>${title}</h2><span class="weekly-date-range" aria-live="polite">${rangeLabel}</span></div>
         <div class="weekly-nav" role="group" aria-label="Navegar entre semanas">
@@ -207,6 +269,7 @@
         <span class="week-day-label">${day.weekLabel}</span><span class="week-day-number">${day.trained?icon('check'):day.number}</span><span class="week-day-dot"></span>
       </div>`).join('')}</div>
       <div class="weekly-panel-foot"><span class="weekly-count">${icon('calendar')} ${count} ${count===1?'dia treinado':'dias treinados'}</span><p class="weekly-hint">Dias com treino registrado ficam em verde.</p></div>
+      </div>
     </section>`;
   }
   function renderHome() {
@@ -606,6 +669,27 @@
     if(action==='open-routine'){navigate('routine');return;}
     if(action==='filter-history'){ui.historyFilter=el.dataset.value;render();return;}
     if(action==='progress-range'){ui.progressRange=['30','90','all'].includes(el.dataset.value)?el.dataset.value:'all';render();return;}
+    if(action==='calendar-view'){
+      if(el.dataset.value==='month'){
+        const now=new Date();
+        const viewedMonday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7)+ui.weekOffset*7,12);
+        ui.monthOffset=Math.min(0,(viewedMonday.getFullYear()-now.getFullYear())*12+viewedMonday.getMonth()-now.getMonth());
+        ui.selectedCalendarDate='';
+        ui.calendarView='month';
+      } else {
+        ui.calendarView='week';
+      }
+      render();return;
+    }
+    if(action==='month-prev'){ui.monthOffset-=1;ui.selectedCalendarDate='';render();return;}
+    if(action==='month-next'){ui.monthOffset=Math.min(0,ui.monthOffset+1);ui.selectedCalendarDate='';render();return;}
+    if(action==='month-today'){ui.monthOffset=0;ui.selectedCalendarDate='';render();return;}
+    if(action==='calendar-select-day'){
+      if(/^\d{4}-\d{2}-\d{2}$/.test(el.dataset.date||'')){
+        ui.selectedCalendarDate=el.dataset.date;render();
+      }
+      return;
+    }
     if(action==='week-prev'){ui.weekOffset-=1;render();return;}
     if(action==='week-next'){ui.weekOffset=Math.min(0,ui.weekOffset+1);render();return;}
     if(action==='week-today'){ui.weekOffset=0;render();return;}

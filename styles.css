@@ -401,3 +401,54 @@ button:focus-visible,a:focus-visible {outline:2px solid var(--accent);outline-of
 @media(prefers-reduced-motion:reduce){
   .week-nav-button,.week-today-button {transition:none}
 }
+
+/* REP: abas Semana / Calendário mensal dentro do cartão de constância. */
+.calendar-tabs {display:inline-flex;align-items:center;gap:4px;padding:4px;margin-bottom:19px;border:1px solid #385049;border-radius:14px;background:#111d23}
+.calendar-tab {display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:115px;min-height:38px;padding:8px 15px;border:0;border-radius:10px;background:transparent;color:#a8c2b6;font-size:12px;font-weight:800;transition:background .17s ease,color .17s ease}
+.calendar-tab svg {width:16px;height:16px}
+.calendar-tab.active {background:#dfff77;color:#18280d;box-shadow:0 2px 10px #dfff7718}
+.calendar-tab:not(.active):hover {background:#23372e;color:#ebf6e7}
+.calendar-tab:focus-visible {outline:2px solid var(--accent);outline-offset:2px}
+.monthly-panel {padding-bottom:18px}
+.month-heading {font-size:clamp(18px,2.4vw,24px)!important;font-weight:850}
+.month-calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-top:21px}
+.month-day-label {min-width:0;display:grid;place-items:center;padding-bottom:5px;color:#90a9a3;font-size:10px;font-weight:850;letter-spacing:.04em}
+.month-day-empty {min-width:0;min-height:45px}
+.month-day {position:relative;min-width:0;height:49px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;padding:3px 1px 2px;border:1px solid #31483f;border-radius:13px;background:#192b2d;color:#d6e4df;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.month-day-dot {display:block;width:4px;height:4px;border-radius:50%;background:transparent}
+.month-day.trained {background:#dfff77;color:#172807;border-color:#dfff77}
+.month-day.trained .month-day-dot {background:#486a27}
+.month-day.today:not(.trained) {border-color:#dfff77;color:#dfff77}
+.month-day.selected {outline:2px solid #fff;outline-offset:2px}
+.month-day:not(.trained):hover {background:#294039}
+.month-day:active {transform:scale(.96)}
+.month-day:focus-visible {outline:2px solid #fff;outline-offset:2px}
+.calendar-select-hint {margin-top:18px;color:#a1b8ad;font-size:11px;text-align:center}
+.calendar-day-details {margin-top:17px;padding:15px 16px;border:1px solid #385244;border-radius:13px;background:#172a29}
+.calendar-day-details>strong {font-size:12px;color:#ecf7e8;display:block;font-weight:800}
+.calendar-day-details>p {margin-top:8px;color:#a4b8b1;font-size:11px}
+.calendar-sessions {display:grid;gap:8px;margin-top:11px}
+.calendar-session {display:flex;align-items:center;gap:9px;padding:10px 11px;background:#20382c;border-radius:10px;color:#eaf6e5;font-size:12px}
+.calendar-session svg {height:15px;width:15px;flex-shrink:0;color:#dfff77}
+.calendar-session span {flex:1}
+.calendar-session small {color:#c1d4c4;font-size:10px}
+.monthly-panel .weekly-panel-foot {border-top:1px solid #314741;padding-top:13px;margin-top:17px}
+@media(max-width:650px) {
+  .calendar-tabs {display:flex;width:100%;margin-bottom:17px}
+  .calendar-tab {flex:1;min-width:0;min-height:41px}
+  .month-calendar-grid {gap:5px;margin-top:17px}
+  .month-day {height:43px;border-radius:11px;font-size:13px}
+  .month-day-empty {min-height:43px}
+  .month-day-label {font-size:8px}
+  .calendar-day-details {padding:13px 12px}
+  .calendar-session {flex-wrap:wrap}
+}
+@media(max-width:380px) {
+  .month-calendar-grid {gap:3px}
+  .month-day {height:39px;border-radius:9px;font-size:12px}
+  .month-day-empty {min-height:39px}
+  .month-day-dot {width:3px;height:3px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .calendar-tab,.month-day {transition:none!important}
+}
