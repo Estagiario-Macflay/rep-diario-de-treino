@@ -27,7 +27,7 @@
 .creator-credit{display:inline-flex;align-items:center;gap:5px;flex-wrap:nowrap;white-space:nowrap;margin-top:23px;padding-top:17px;border-top:1px solid #29353d;text-decoration:none;color:#90a7b0;font-size:11px;line-height:1.5;transition:color .18s}
 .creator-credit .creator-label{display:inline-block;flex:0 0 auto}
 .creator-credit .creator-handle{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:0 0 auto}
-.creator-credit .creator-handle svg{width:17px;height:17px;flex:0 0 17px;display:block}
+.creator-credit .creator-handle svg{width:17px;height:17px;flex:0 0 17px;display:block;color:var(--accent);stroke:currentColor}
 .creator-credit strong{color:#dfff77;font-weight:750}
 .creator-credit:hover{color:#fff}
 .creator-credit:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
