@@ -389,39 +389,23 @@
   });
   document.addEventListener('visibilitychange',()=>{if(!document.hidden && restTick)restTick();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&ui.modal){ui.modal=null;document.getElementById('modal-root').innerHTML='';}});
-  function openInstagramFromCredit(event, link) {
+  function openInstagramFromCredit(event) {
     const ua = navigator.userAgent || '';
     const android = /Android/i.test(ua);
     const ios = /iPhone|iPad|iPod/i.test(ua) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const mobile = android || ios || Boolean(navigator.userAgentData?.mobile);
-    // No desktop, preserve o link comum (target=_blank). O Chrome pode
-    // capturá-lo para um aplicativo instalado; isso depende da preferência local.
-    if (!mobile) return;
+    if (!mobile) return; // No computador o link normal abre outra aba.
 
+    // No celular, cancelar a permissão deve manter o visitante no REP.
+    // Não criar abas, nem usar fallback web ou temporizador após o cancelamento.
     event.preventDefault();
-    const fallbackUrl = 'https://www.instagram.com/macflayyy/';
-
-    // O Chrome no Android oferece fallback nativo quando o Instagram não está instalado.
     if (android && /Chrome\/\d+/i.test(ua) && !/EdgA|OPR\/|SamsungBrowser/i.test(ua)) {
-      window.location.assign('intent://www.instagram.com/macflayyy/#Intent;scheme=https;package=com.instagram.android;S.browser_fallback_url=https%3A%2F%2Fwww.instagram.com%2Fmacflayyy%2F;end');
-      return;
+      // Intent sem browser_fallback_url: se o app não for aberto, não navega ao site.
+      window.location.assign('intent://www.instagram.com/macflayyy/#Intent;scheme=https;package=com.instagram.android;end');
+    } else {
+      window.location.assign('instagram://user?username=macflayyy');
     }
-
-    let openedApp = false;
-    const markHidden = () => { if (document.hidden) openedApp = true; };
-    const markLeaving = () => { openedApp = true; };
-    document.addEventListener('visibilitychange', markHidden);
-    window.addEventListener('pagehide', markLeaving, {once:true});
-
-    window.setTimeout(() => {
-      document.removeEventListener('visibilitychange', markHidden);
-      window.removeEventListener('pagehide', markLeaving);
-      if (!openedApp && !document.hidden) window.location.assign(fallbackUrl);
-    }, 1600);
-
-    // O navegador pode impedir links de aplicativo; nesse caso usamos o perfil HTTPS.
-    window.location.assign('instagram://user?username=macflayyy');
   }
 
   document.addEventListener('click',event=>{
