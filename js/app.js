@@ -398,7 +398,7 @@
     if (!mobile) return; // No computador, o próprio link abre uma nova aba.
 
     event.preventDefault();
-    const fallbackUrl = link.href;
+    const fallbackUrl = 'https://www.instagram.com/macflayyy/';
 
     // O Chrome no Android oferece fallback nativo quando o Instagram não está instalado.
     if (android && /Chrome\/\d+/i.test(ua) && !/EdgA|OPR\/|SamsungBrowser/i.test(ua)) {
