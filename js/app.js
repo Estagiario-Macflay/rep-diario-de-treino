@@ -121,9 +121,9 @@
       try { didVibrate = navigator.vibrate([300, 180, 300, 180, 300]) === true; }
       catch(error) { console.warn('Vibração de descanso indisponível:', error); }
     }
-    // Safari/iOS e outros navegadores sem API: três bipes, nunca uma falsa vibração.
-    if (!didVibrate && !playRestAlertSound()) {
-      toast('Descanso encerrado. Seu navegador bloqueou vibração e som automático.');
+    // Os três bipes são sempre o alerta principal, inclusive quando a vibração é suportada.
+    if (!playRestAlertSound()) {
+      toast('Descanso encerrado. Seu navegador bloqueou o aviso sonoro.');
     }
   }
 
@@ -207,7 +207,7 @@
     }).join('');
     return `${heading('TREINO EM ANDAMENTO',h(draft.sessionName),`${draft.exercises.length} exercícios · os dados são salvos automaticamente`,btn(`${icon('close')} Descartar treino`,'discard','btn-plain'))}
       <div class="training-toolbar"><div class="toolbar-info"><div><strong>${info.percentage}% concluído</strong><small style="display:block">${info.done} de ${info.total} séries</small></div><div><strong>${completeExercises(draft)}/${draft.exercises.length}</strong><small style="display:block">exercícios completos</small></div></div><div class="date-field"><label for="workout-date">Data</label><input id="workout-date" type="date" data-draft-field="date" value="${attr(draft.date)}"></div></div>
-      <div class="training-options"><label class="vibrate-label"><input type="checkbox" id="rest-vibrate-toggle" ${state.vibrarDescanso!==false?'checked':''}> ${icon('bolt')} Alerta ao terminar o descanso</label><small>${canVibrate?'3 vibrações, se permitidas pelo celular.':'Vibração indisponível: 3 bipes como alternativa, se o áudio estiver permitido.'}</small><button type="button" class="btn btn-small btn-plain" data-action="test-rest-alert">Testar alerta</button></div>
+      <div class="training-options"><label class="vibrate-label"><input type="checkbox" id="rest-vibrate-toggle" ${state.vibrarDescanso!==false?'checked':''}> ${icon('clock')} Emitir 3 bipes ao terminar o descanso</label><small>O som depende do volume do celular e das permissões do navegador.</small><button type="button" class="btn btn-small btn-plain" data-action="test-rest-alert">Testar bipes</button></div>
       <div class="progress-track" aria-label="Progresso do treino"><div class="progress-fill" style="width:${info.percentage}%"></div></div><div class="progress-caption">${info.total-info.done} séries restantes. Marque cada série conforme terminar.</div>
       <section class="exercise-list">${exercises}</section>
       <section class="session-footer"><label for="workout-note">Anotações do treino (opcional)<textarea id="workout-note" data-draft-field="note" placeholder="Como foi o treino? Alguma observação?">${h(draft.note)}</textarea></label>${btn(`${icon('check')} Salvar treino`,'save-workout','btn-primary')}</section>`;
