@@ -3,6 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script>
+    (function removeTrackingParam() {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('utm_source') === 'chatgpt.com') {
+        url.searchParams.delete('utm_source');
+        window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+      }
+    })();
+  </script>
   <meta name="theme-color" content="#0d1118">
   <meta name="description" content="Registre seus treinos, acompanhe cargas e evolua em cada sessão. Funciona offline e salva no navegador.">
   <title>REP — Diário de treino</title>
