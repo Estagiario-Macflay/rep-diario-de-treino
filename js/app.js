@@ -75,7 +75,7 @@
     if (!AudioContextClass) return;
     try {
       if (!restAudioContext || restAudioContext.state === 'closed') restAudioContext = new AudioContextClass();
-      if (restAudioContext.state === 'suspended') restAudioContext.resume().catch(() => {});
+      const resumed = restAudioContext.state === 'suspended' || restAudioContext.state === 'interrupted' ? restAudioContext.resume().catch(() => {}) : Promise.resolve();
       // Fonte muda inicializada no próprio gesto para permitir os bipes ao fim do cronômetro.
       const oscillator = restAudioContext.createOscillator();
       const volume = restAudioContext.createGain();
@@ -84,7 +84,9 @@
       volume.connect(restAudioContext.destination);
       oscillator.start();
       oscillator.stop(restAudioContext.currentTime + 0.01);
+      return resumed;
     } catch(error) { console.warn('Áudio de descanso indisponível:', error); }
+    return Promise.resolve();
   }
 
   function playRestAlertSound() {
@@ -480,8 +482,7 @@
     if(action==='close-modal'||action==='close-modal-backdrop'){ui.modal=null;document.getElementById('modal-root').innerHTML='';return;}
     if(action==='test-rest-alert'){
       if(state.vibrarDescanso===false){toast('Ative o alerta para testar.');return;}
-      armRestAlertAudio();
-      notifyRestFinished();
+      Promise.resolve(armRestAlertAudio()).then(() => notifyRestFinished());
       return;
     }
     if(action==='stop-rest'){clearInterval(restInterval);restInterval=null;restTick=null;restEnd=0;document.getElementById('rest-timer')?.remove();return;}
