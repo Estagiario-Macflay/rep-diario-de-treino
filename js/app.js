@@ -50,7 +50,7 @@
   };
   const icon = (key) => `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">${icons[key] || icons.info}</svg>`;
 
-  function defaultState() { return {schemaVersion:1,sessoes:clone(SOURCE.sessoes),historico:[],rascunho:null}; }
+  function defaultState() { return {schemaVersion:1,sessoes:clone(SOURCE.sessoes),historico:[],rascunho:null,restPreferences:{},vibrarDescanso:true}; }
   function readState() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -65,6 +65,8 @@
   let toastTimeout;
   let restInterval = null;
   let restEnd = 0;
+  let restTick = null;
+  const canVibrate = typeof navigator.vibrate === 'function';
 
   function saveState() {
     try {localStorage.setItem(STORAGE_KEY,JSON.stringify(state));return true;}
@@ -146,6 +148,7 @@
     }).join('');
     return `${heading('TREINO EM ANDAMENTO',h(draft.sessionName),`${draft.exercises.length} exercícios · os dados são salvos automaticamente`,btn(`${icon('close')} Descartar treino`,'discard','btn-plain'))}
       <div class="training-toolbar"><div class="toolbar-info"><div><strong>${info.percentage}% concluído</strong><small style="display:block">${info.done} de ${info.total} séries</small></div><div><strong>${completeExercises(draft)}/${draft.exercises.length}</strong><small style="display:block">exercícios completos</small></div></div><div class="date-field"><label for="workout-date">Data</label><input id="workout-date" type="date" data-draft-field="date" value="${attr(draft.date)}"></div></div>
+      <div class="training-options"><label class="vibrate-label"><input type="checkbox" id="rest-vibrate-toggle" ${state.vibrarDescanso!==false?'checked':''} ${canVibrate?'':'disabled'}> ${icon('bolt')} Vibrar ao terminar o descanso</label>${canVibrate?'<small>Disponível neste dispositivo, com a página ativa.</small>':'<small>Vibração não suportada neste navegador.</small>'}</div>
       <div class="progress-track" aria-label="Progresso do treino"><div class="progress-fill" style="width:${info.percentage}%"></div></div><div class="progress-caption">${info.total-info.done} séries restantes. Marque cada série conforme terminar.</div>
       <section class="exercise-list">${exercises}</section>
       <section class="session-footer"><label for="workout-note">Anotações do treino (opcional)<textarea id="workout-note" data-draft-field="note" placeholder="Como foi o treino? Alguma observação?">${h(draft.note)}</textarea></label>${btn(`${icon('check')} Salvar treino`,'save-workout','btn-primary')}</section>`;
@@ -178,7 +181,7 @@
     const ex=entry.exercise;
     const completed=currentCompletion(entry);
     const metric=ex.tipo==='cardio'?'CARDIO':ex.tipo==='tempo'?'ISOMETRIA':'MUSCULAÇÃO';
-    const controls=ex.tipo==='cardio'?cardioFields(entry,index):`<div class="set-table">${entry.sets.map((_,i)=>setRow(ex,entry,index,i)).join('')}</div><div class="exercise-footer"><span class="hint">${ex.intervalo != null?`Intervalo: ${h(ex.intervaloOriginal||`${ex.intervalo}s`)}`:'Sem intervalo informado'}</span><div style="display:flex;gap:7px;flex-wrap:wrap">${ex.intervalo != null?btn(`${icon('clock')} Descanso`,'rest','btn-plain btn-small',`data-seconds="${Number(ex.intervalo)||0}"`):''}${btn(`${icon('check')} ${completed?'Desmarcar':'Concluir exercício'}`,'toggle-exercise',`btn-small ${completed?'btn-primary':'btn-ghost'}`,`data-ex="${index}"`)}</div></div>`;
+    const controls=ex.tipo==='cardio'?cardioFields(entry,index):`<div class="set-table">${entry.sets.map((_,i)=>setRow(ex,entry,index,i)).join('')}</div><div class="exercise-footer"><span class="hint">${ex.intervalo != null?`Intervalo: ${h(ex.intervaloOriginal||`${ex.intervalo}s`)}`:'Sem intervalo informado'}</span><div class="exercise-actions">${ex.intervalo != null?`<div class="rest-config"><label><span>Descanso (s)</span><input type="number" inputmode="numeric" min="1" max="3600" step="1" value="${attr(state.restPreferences?.[ex.id] ?? ex.intervalo)}" data-rest-seconds="${attr(ex.id)}" aria-label="Tempo de descanso, em segundos, para ${attr(ex.nome)}"></label>${btn(`${icon('clock')} Iniciar descanso`,'rest','btn-plain btn-small',`data-rest-ex="${attr(ex.id)}" data-default-seconds="${Number(ex.intervalo)||0}"`)}</div>`:''}${btn(`${icon('check')} ${completed?'Desmarcar':'Concluir exercício'}`,'toggle-exercise',`btn-small ${completed?'btn-primary':'btn-ghost'}`,`data-ex="${index}"`)}</div></div>`;
     return `<article class="exercise-card ${completed?'is-complete':''}" id="entry-${index}"><div class="exercise-header"><div><div class="exercise-number">EXERCÍCIO ${String(index+1).padStart(2,'0')} · ${metric}</div><div class="exercise-name">${h(ex.nome)}</div></div><span class="tag ${completed?'tag-accent':''}">${completed?icon('check'):icon('layers')} ${completed?'Feito':`${entry.sets.length} ${entry.sets.length===1?'bloco':'séries'}`}</span></div>${renderExerciseMeta(ex)}${controls}</article>`;
   }
 
@@ -329,21 +332,41 @@
     }catch(err){toast(`Falha ao importar: ${err.message}`);}
   }
   function startRest(seconds) {
-    if(!seconds || seconds<1)return;
+    if(!Number.isInteger(seconds) || seconds<1 || seconds>3600){toast('Informe um descanso de 1 a 3600 segundos.');return;}
     clearInterval(restInterval);
     restEnd=Date.now()+seconds*1000;
     let element=document.getElementById('rest-timer');
-    if(!element){element=document.createElement('div');element.id='rest-timer';document.body.appendChild(element);}
+    if(!element){element=document.createElement('div');element.id='rest-timer';element.setAttribute('role','status');element.setAttribute('aria-live','polite');document.body.appendChild(element);}
+    let finished=false;
     const tick=()=>{
+      if(restEnd===0 || !element.isConnected)return;
       const left=Math.max(0,Math.ceil((restEnd-Date.now())/1000));
-      element.className='rest-timer';element.innerHTML=`<small>DESCANSO</small><strong>${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}</strong><button type="button" class="btn btn-small" data-action="stop-rest">Fechar</button>`;
-      if(left===0){clearInterval(restInterval);element.querySelector('small').textContent='TEMPO ENCERRADO';}
+      element.className=`rest-timer ${left===0?'rest-finished':''}`;
+      element.innerHTML=`<small>${left===0?'TEMPO ENCERRADO':'DESCANSO'}</small><strong>${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}</strong><button type="button" class="btn btn-small" data-action="stop-rest">Fechar</button>`;
+      if(left===0 && !finished){
+        finished=true;
+        clearInterval(restInterval);
+        restInterval=null;
+        // Vibração é uma API opcional, geralmente disponível no Android; pode falhar com a página em segundo plano.
+        if(state.vibrarDescanso!==false && canVibrate){try{navigator.vibrate([250,130,250,130,450]);}catch(error){console.warn('Vibração indisponível:',error);}}
+      }
     };
-    tick();restInterval=setInterval(tick,250);
+    restTick=tick;
+    tick();
+    if(!finished)restInterval=setInterval(tick,250);
   }
 
   document.addEventListener('input',event=>{
     const input=event.target;
+    if(input.matches('[data-rest-seconds]')){
+      const seconds=Number(input.value);
+      if(input.value!=='' && Number.isInteger(seconds) && seconds>=1 && seconds<=3600){
+        if(!state.restPreferences)state.restPreferences={};
+        state.restPreferences[input.dataset.restSeconds]=seconds;
+        saveState();
+      }
+      return;
+    }
     if(!state.rascunho)return;
     if(input.dataset.draftField){
       if(input.dataset.draftField==='date' && !input.value)return;
@@ -360,9 +383,11 @@
     }
   });
   document.addEventListener('change',event=>{
+    if(event.target.id==='rest-vibrate-toggle'){state.vibrarDescanso=event.target.checked;saveState();return;}
     if(event.target.id==='progress-select'){ui.progressExercise=event.target.value;render();}
     if(event.target.id==='backup-file'){importBackup(event.target.files[0]);event.target.value='';}
   });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden && restTick)restTick();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&ui.modal){ui.modal=null;document.getElementById('modal-root').innerHTML='';}});
   document.addEventListener('click',event=>{
     const nav=event.target.closest('[data-nav]');if(nav){navigate(nav.dataset.nav);return;}
@@ -375,8 +400,13 @@
     if(action==='open-routine'){navigate('routine');return;}
     if(action==='filter-history'){ui.historyFilter=el.dataset.value;render();return;}
     if(action==='close-modal'||action==='close-modal-backdrop'){ui.modal=null;document.getElementById('modal-root').innerHTML='';return;}
-    if(action==='stop-rest'){clearInterval(restInterval);document.getElementById('rest-timer')?.remove();return;}
-    if(action==='rest'){startRest(Number(el.dataset.seconds));return;}
+    if(action==='stop-rest'){clearInterval(restInterval);restInterval=null;restTick=null;restEnd=0;document.getElementById('rest-timer')?.remove();return;}
+    if(action==='rest'){
+      const input=el.parentElement.querySelector('[data-rest-seconds]');
+      const seconds=Number(input?.value);
+      if(!input || input.value.trim()==='' || !Number.isInteger(seconds) || seconds<1 || seconds>3600){toast('Escolha um descanso de 1 a 3600 segundos.');input?.focus();return;}
+      startRest(seconds);return;
+    }
     if(action==='toggle-set'||action==='toggle-exercise'){
       if(!state.rascunho)return;
       const entry=state.rascunho.exercises[Number(el.dataset.ex)];if(!entry)return;
