@@ -29,3 +29,12 @@
 .creator-credit strong{color:#dfff77;font-weight:750}
 .creator-credit:hover{color:#fff}
 .creator-credit:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+/* Instagram ao lado do perfil e crédito visível no celular. */
+.creator-credit{display:inline-flex;align-items:center;flex-wrap:wrap;column-gap:5px;row-gap:3px}
+.creator-credit .creator-handle{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.creator-credit .creator-handle svg{width:17px;height:17px;flex:0 0 17px;display:block}
+.mobile-creator{display:none}
+@media(max-width:850px){
+  .mobile-creator{display:flex;align-items:center;justify-content:center;margin:0 20px 80px;padding:0 12px}
+  .creator-credit-mobile{justify-content:center;margin-top:0;padding:16px 0 0;border-top:1px solid #29353d;font-size:12px}
+}
