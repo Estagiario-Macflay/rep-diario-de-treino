@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1118">
+  <meta name="description" content="Registre seus treinos, acompanhe cargas e evolua em cada sessão. Funciona offline e salva no navegador.">
+  <title>REP — Diário de treino</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="js/data.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <div class="brand" aria-label="REP, diário de treino"><div class="brand-mark">R<span>·</span></div><div class="brand-name">REP<span class="brand-dot">.</span><small>DIÁRIO DE TREINO</small></div></div>
+      <div class="side-label">MENU</div>
+      <nav class="desktop-nav" id="desktop-nav">
+        <button data-nav="home" class="nav-item active"><span data-icon="home"></span><span>Início</span></button>
+        <button data-nav="training" class="nav-item"><span data-icon="dumbbell"></span><span>Treinar</span></button>
+        <button data-nav="history" class="nav-item"><span data-icon="calendar"></span><span>Histórico</span></button>
+        <button data-nav="progress" class="nav-item"><span data-icon="chart"></span><span>Evolução</span></button>
+        <button data-nav="routine" class="nav-item"><span data-icon="sliders"></span><span>Minha ficha</span></button>
+      </nav>
+      <div class="sidebar-bottom"><div class="storage-indicator"><span class="status-dot"></span><span>Salvo neste navegador</span></div><div class="sidebar-tip">Seus treinos. Sua evolução.<br><strong>Um dia de cada vez.</strong></div></div>
+    </aside>
+    <div class="page">
+      <header class="topbar"><div class="mobile-brand">REP<span>.</span></div><div class="breadcrumb"><span>DIÁRIO DE TREINO</span><span class="crumb-separator">/</span><span id="current-page-name">Início</span></div><div class="topbar-right"><span class="live-chip"><span class="status-dot"></span> SEU ESPAÇO</span><span id="today-label"></span></div></header>
+      <main id="app" tabindex="-1" aria-live="polite"></main>
+      <footer class="site-footer">REP. — Construído para acompanhar sua evolução. <span>Os dados ficam no dispositivo.</span></footer>
+    </div>
+  </div>
+  <nav class="mobile-nav" aria-label="Navegação principal">
+    <button data-nav="home" class="mobile-nav-item active"><span data-icon="home"></span><small>Início</small></button>
+    <button data-nav="training" class="mobile-nav-item"><span data-icon="dumbbell"></span><small>Treinar</small></button>
+    <button data-nav="history" class="mobile-nav-item"><span data-icon="calendar"></span><small>Histórico</small></button>
+    <button data-nav="progress" class="mobile-nav-item"><span data-icon="chart"></span><small>Evolução</small></button>
+    <button data-nav="routine" class="mobile-nav-item"><span data-icon="sliders"></span><small>Ficha</small></button>
+  </nav>
+  <div id="modal-root"></div>
+  <div id="toast-root" role="status" aria-live="polite"></div>
+</body>
+</html>
