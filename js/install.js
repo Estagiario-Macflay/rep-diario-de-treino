@@ -74,10 +74,30 @@
   });
   updateInstalled();
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    let refreshing = false;
+    // A versão instalada pode manter uma página antiga aberta por vários dias.
+    // Ao ativar uma versão nova, recarrega a interface sem apagar o localStorage.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing || document.getElementById('rest-timer')) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    const checkUpdates = () => {
+      navigator.serviceWorker.getRegistration('./')
+        .then(registration => registration?.update())
+        .catch(error => console.warn('Não foi possível verificar atualizações do REP:', error));
+    };
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(error => {
-        console.warn('O REP não conseguiu ativar o modo offline:', error);
-      });
+      navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})
+        .then(registration => registration.update())
+        .catch(error => console.warn('O REP não conseguiu ativar o modo offline:', error));
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkUpdates();
+    });
+    window.addEventListener('pageshow', event => {
+      if (event.persisted) checkUpdates();
     });
   }
 })();
