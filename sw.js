@@ -1,9 +1,9 @@
 // Offline simples: o REP guarda somente a interface; os treinos ficam em localStorage.
-const CACHE_NAME = 'rep-app-shell-20261029-month-calendar';
+const CACHE_NAME = 'rep-app-shell-20261029-ios-header-safearea';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=20261029-month-calendar',
+  './styles.css?v=20261029-ios-header-safearea',
   './js/app.js?v=20261029-month-calendar',
   './js/data.js',
   './js/install.js?v=20261029-floating-app',

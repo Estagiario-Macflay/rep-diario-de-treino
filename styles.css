@@ -452,3 +452,22 @@ button:focus-visible,a:focus-visible {outline:2px solid var(--accent);outline-of
 @media(prefers-reduced-motion:reduce) {
   .calendar-tab,.month-day {transition:none!important}
 }
+
+/* iPhone instalado na Tela de Início:
+   mantém REP e o cabeçalho abaixo do relógio, notch e Dynamic Island. */
+@media (max-width: 850px) and (display-mode: standalone) {
+  .topbar {
+    height: calc(65px + max(24px, env(safe-area-inset-top, 0px)));
+    min-height: calc(65px + max(24px, env(safe-area-inset-top, 0px)));
+    padding-top: max(24px, env(safe-area-inset-top, 0px));
+    background: #0e151e;
+  }
+}
+@media (max-width: 850px) {
+  body.rep-installed .topbar {
+    height: calc(65px + max(24px, env(safe-area-inset-top, 0px)));
+    min-height: calc(65px + max(24px, env(safe-area-inset-top, 0px)));
+    padding-top: max(24px, env(safe-area-inset-top, 0px));
+    background: #0e151e;
+  }
+}
