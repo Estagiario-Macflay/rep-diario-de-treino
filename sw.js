@@ -1,10 +1,10 @@
 // Offline simples: o REP guarda somente a interface; os treinos ficam em localStorage.
-const CACHE_NAME = 'rep-app-shell-20261029';
+const CACHE_NAME = 'rep-app-shell-20261029-rep2';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=20261029-floating-app',
-  './js/app.js?v=20261029-floating-app',
+  './styles.css?v=20261029-rep2',
+  './js/app.js?v=20261029-rep2',
   './js/data.js',
   './js/install.js?v=20261029-floating-app',
   './manifest.webmanifest',

@@ -206,3 +206,162 @@ body.rep-installed .install-card {display:none}
   width:100%;min-height:43px;border:0;border-radius:11px;
   background:#dfff77;color:#172208;font-weight:850;font-size:13px;
 }
+
+/* REP 2.0 — acabamento premium: hierarquia, cartões, calendário, progresso e cronômetro. */
+:root {
+  --panel:#131d26;
+  --border:#304049;
+  --radius:20px;
+  --shadow:0 18px 48px #00000038;
+}
+button, a, input, select { -webkit-tap-highlight-color:transparent }
+button:focus-visible,a:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
+#app.rep-enter {animation:rep-content-in .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rep-content-in {from{opacity:.78;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.hero-premium {
+  min-height:275px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 205px;
+  align-items:center;
+  gap:20px;
+  background:radial-gradient(ellipse at 86% 6%,#536c3d44,transparent 38%),linear-gradient(120deg,#16232c 0%,#1b2d2c 52%,#25382d 100%);
+  border:1px solid #405548;
+  box-shadow:0 15px 50px #0003,inset 0 1px #ffffff12;
+}
+.hero-premium:before {right:-175px;top:-130px;width:390px;height:390px;border-width:50px;opacity:.6}
+.hero-premium:after {right:130px;bottom:-165px}
+.hero-premium .hero-copy {position:relative;z-index:1}
+.hero-premium h1 {font-size:clamp(2rem,4vw,3rem);line-height:1.12}
+.hero-premium .hero-actions {display:flex;flex-wrap:wrap;gap:15px;align-items:center;margin-top:24px}
+.hero-premium .hero-actions .btn {margin-top:0;min-height:46px;padding-inline:21px}
+.hero-secondary {font-size:11px;color:#a8bcb1;max-width:210px}
+.hero-visual {position:relative;display:flex;flex-direction:column;align-items:center;gap:12px}
+.hero-orbit {
+  width:162px;height:162px;border-radius:50%;padding:12px;
+  background:conic-gradient(var(--accent) 0 var(--hero-progress),#395045 var(--hero-progress) 100%);
+  box-shadow:0 0 45px #dfff7714;
+}
+.hero-orbit>span {display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:#1b2e29;border:1px solid #405744}
+.hero-orbit svg {width:50px;height:50px;stroke:var(--accent);stroke-width:1.4}
+.hero-visual small {font-size:10px;font-weight:800;letter-spacing:.15em;color:#d1e7c7}
+.stat-card {border-color:#304146;border-radius:19px;background:linear-gradient(135deg,#172129,#121b23);transition:border-color .2s,transform .2s}
+.stat-card:hover {transform:translateY(-2px);border-color:#516449}
+.stat-value {color:#eef7e8;font-variant-numeric:tabular-nums}
+.section-heading h2 {font-weight:850;letter-spacing:-.055em}
+.weekly-panel {border:1px solid #314741;border-radius:21px;background:linear-gradient(115deg,#17262b,#18252a);padding:21px 23px;margin:0 0 28px}
+.weekly-panel-head {display:flex;align-items:center;justify-content:space-between;gap:16px}
+.weekly-panel-head h2 {font-size:1.23rem;margin-top:4px}
+.small-eyebrow {font-size:9px;color:var(--accent);font-weight:850;letter-spacing:.15em}
+.weekly-count {display:inline-flex;align-items:center;gap:7px;color:#b8d6c4;font-size:11px}
+.weekly-count svg {width:15px;height:15px;color:var(--accent)}
+.week-days {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin-top:22px}
+.week-day {display:flex;align-items:center;flex-direction:column;gap:6px}
+.week-day-label {font-size:9px;color:#8fa6a3;font-weight:800;letter-spacing:.1em}
+.week-day-number {width:43px;height:43px;display:grid;place-items:center;border-radius:14px;border:1px solid #3a4b4b;background:#1f2d34;color:#d4e2df;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.week-day-number svg {width:19px;height:19px}
+.week-day.trained .week-day-number {background:var(--accent);border-color:var(--accent);color:#1c2a11}
+.week-day.today:not(.trained) .week-day-number {border:1px solid var(--accent);color:var(--accent)}
+.week-day-dot {height:4px;width:4px;border-radius:50%;background:transparent}
+.week-day.today .week-day-dot {background:var(--accent)}
+.weekly-hint {margin-top:12px;color:#839d9b;font-size:10px;text-align:center}
+.session-card {border-radius:20px;background:linear-gradient(145deg,#17232c,#131d26);border-color:#34444c;transition:transform .2s,border-color .2s,box-shadow .2s}
+.session-card:hover {border-color:#728e54;box-shadow:0 12px 30px #00000030}
+.session-card-active {border-color:#8fae5a}
+.session-icon {width:45px;height:45px;border-radius:14px}
+.session-card h3 {font-weight:850}
+.session-progress-note {display:flex;align-items:center;justify-content:space-between;color:#dfff77;font-size:11px;font-weight:800}
+.session-progress-note strong {font-variant-numeric:tabular-nums}
+.exercise-card {border-radius:20px;background:linear-gradient(140deg,#151f29,#121b24);border-color:#30414a;box-shadow:0 10px 32px #00000017;transition:background .2s,border-color .2s,box-shadow .2s;scroll-margin-top:18px}
+.exercise-card.is-complete {background:linear-gradient(140deg,#1a2a22,#132019);border-color:#59794a;box-shadow:inset 3px 0 #dfff77,0 10px 32px #00000020}
+.exercise-name {font-size:clamp(16px,2vw,20px);font-weight:830;letter-spacing:-.045em}
+.exercise-header {align-items:center}
+.exercise-header .tag {flex-shrink:0;border-radius:11px}
+.exercise-insights {display:flex;align-items:center;justify-content:space-between;gap:11px;margin:15px 0 10px;color:#9cbaa9;font-size:11px}
+.exercise-insights>span:first-child {display:inline-flex;gap:7px;align-items:center}
+.exercise-insights svg {width:14px;height:14px;flex-shrink:0;color:var(--accent)}
+.exercise-count {font-variant-numeric:tabular-nums;color:#d7e4de;white-space:nowrap;font-weight:750}
+.exercise-mini-track {height:5px;overflow:hidden;border-radius:999px;background:#35483e;margin-bottom:17px}
+.exercise-mini-track span {display:block;height:100%;background:linear-gradient(90deg,#b5ed67,#dfff77);border-radius:999px;transition:width .25s ease}
+.set-row.done {background:#223726}
+.set-row.done .set-index {color:var(--accent)}
+.tick.checked {animation:rep-set-check .24s ease both}
+@keyframes rep-set-check {0%{transform:scale(.82)}65%{transform:scale(1.12)}100%{transform:scale(1)}}
+.chart-card {border-radius:21px}
+.progress-controls {display:flex;align-items:flex-end;gap:15px;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.progress-controls .chart-selector {flex:1;min-width:min(100%,255px);margin-bottom:0}
+.chart-range {display:inline-flex;align-items:center;gap:3px;padding:4px;background:#19262c;border:1px solid #33454a;border-radius:13px}
+.chart-range button {min-height:34px;border:0;border-radius:9px;background:transparent;color:#afc0c3;font-size:11px;font-weight:800;padding:8px 13px;white-space:nowrap}
+.chart-range button.active {background:#dfff77;color:#1c290f}
+.chart-range button:focus-visible {outline:2px solid var(--accent);outline-offset:1px}
+.record-banner {display:flex;align-items:center;gap:15px;margin:0 0 17px;padding:15px 18px;background:linear-gradient(100deg,#20332c,#182629);border:1px solid #536b45;border-radius:18px}
+.record-icon {display:grid;place-items:center;width:43px;height:43px;border-radius:14px;background:#dfff7726;color:var(--accent)}
+.record-icon svg {width:23px;height:23px}
+.record-banner>div {flex:1;display:flex;flex-direction:column;gap:2px}
+.record-banner small {color:#a4c6ac;font-size:10px;font-weight:800;letter-spacing:.05em}
+.record-banner strong {color:#e8faac;font-size:26px;font-weight:900;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.record-label {font-size:9px;font-weight:850;letter-spacing:.12em;color:#c2db9e}
+.chart-area {opacity:.9}
+.chart-line {stroke-width:4}
+.chart-point {filter:drop-shadow(0 0 4px #dfff7755)}
+.rest-timer.rest-floating {
+  width:min(395px,calc(100vw - 30px));
+  max-width:calc(100vw - 30px);
+  display:flex;
+  align-items:center;
+  gap:13px;
+  left:50%;
+  bottom:25px;
+  transform:translateX(-50%);
+  background:linear-gradient(120deg,#1d2d2e,#26392c);
+  color:#f3f8ed;
+  border:1px solid #6c8b4d;
+  border-radius:21px;
+  padding:12px 13px;
+  box-shadow:0 20px 56px #000b,0 0 0 1px #dfff7714 inset;
+}
+.rest-timer.rest-floating.rest-finished {background:linear-gradient(110deg,#dfff77,#c0ec75);color:#23300c}
+.rest-clock {flex:0 0 67px;display:grid;place-items:center;width:67px;height:67px;padding:5px;border-radius:50%;background:conic-gradient(var(--accent) 0 var(--rest-progress),#465950 var(--rest-progress) 100%)}
+.rest-clock-time {display:grid;place-items:center;height:100%;width:100%;border-radius:50%;background:#1a2b2c;color:#e2fc9c;font-size:13px!important;font-weight:850;font-variant-numeric:tabular-nums}
+.rest-finished .rest-clock {background:#22350f}
+.rest-copy {display:flex;flex:1;flex-direction:column;gap:5px;min-width:0}
+.rest-caption {font-size:9px!important;line-height:1.2;letter-spacing:.07em;font-weight:850}
+.rest-description {font-size:10px;color:#adcbc0;line-height:1.35}
+.rest-finished .rest-description {color:#33451b}
+.rest-timer.rest-floating .btn {border-radius:10px;min-height:36px;padding-inline:10px;flex-shrink:0}
+@media(max-width:850px) {
+  .rest-timer.rest-floating {bottom:calc(99px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:650px) {
+  .hero-premium {grid-template-columns:minmax(0,1fr);gap:8px;min-height:220px;padding:25px 23px}
+  .hero-premium h1 {font-size:clamp(28px,8vw,37px)}
+  .hero-visual {display:none}
+  .hero-premium .hero-actions {gap:10px;margin-top:20px}
+  .hero-premium .hero-secondary {font-size:10px}
+  .stat-grid {margin-top:12px;margin-bottom:18px}
+  .stat-card {min-height:105px;border-radius:15px}
+  .stat-value {font-size:clamp(23px,7vw,29px)}
+  .weekly-panel {padding:17px 13px 13px;margin-bottom:24px;border-radius:18px}
+  .weekly-panel-head h2 {font-size:18px}
+  .weekly-count {font-size:10px}
+  .week-days {gap:4px;margin-top:18px}
+  .week-day-number {height:38px;width:min(100%,38px);border-radius:12px;font-size:13px}
+  .week-day-label {font-size:8px}
+  .exercise-insights {gap:7px;font-size:10px;flex-wrap:wrap}
+  .exercise-count {font-size:10px}
+  .record-label {display:none}
+  .progress-controls {gap:12px}
+  .progress-controls .chart-selector {flex-basis:100%}
+  .chart-range {width:100%}
+  .chart-range button {flex:1;padding-inline:7px}
+  .rest-timer.rest-floating {width:calc(100vw - 26px);padding:10px}
+  .rest-clock {height:59px;width:59px;flex-basis:59px}
+  .rest-clock-time {font-size:12px!important}
+  .rest-copy {gap:3px}
+  .rest-caption {font-size:8px!important}
+  .rest-description {font-size:9px}
+  .rest-timer.rest-floating .btn {font-size:10px;min-height:35px}
+}
+@media(prefers-reduced-motion:reduce) {
+  #app.rep-enter,.tick.checked {animation:none!important}
+  .session-card,.stat-card,.exercise-card,.exercise-mini-track span {transition:none!important}
+}

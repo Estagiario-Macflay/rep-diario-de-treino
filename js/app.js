@@ -61,7 +61,7 @@
     } catch (error) { console.warn('Não foi possível recuperar os treinos salvos:',error); return defaultState(); }
   }
   let state = readState();
-  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', modal:null};
+  const ui = {view:'home', chosenSession:state.sessoes[0]?.id || '', historyFilter:'todos', progressExercise:'', progressRange:'all', modal:null};
   let toastTimeout;
   let restInterval = null;
   let restEnd = 0;
@@ -154,25 +154,78 @@
     document.getElementById('today-label').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
     const app=document.getElementById('app');
     app.innerHTML = ({home:renderHome,training:renderTraining,history:renderHistory,progress:renderProgress,routine:renderRoutine}[ui.view] || renderHome)();
+    app.classList.remove('rep-enter');
+    void app.offsetWidth;
+    app.classList.add('rep-enter');
     if(ui.modal) renderModal();
   }
   function navigate(view){ui.view=view;render();window.scrollTo({top:0,behavior:'instant'});}
 
   function sessionCard(session,index) {
     const resuming=state.rascunho?.sessionId===session.id;
-    return `<article class="session-card"><div class="session-card-head"><div><span class="session-code">SESSÃO ${String(index+1).padStart(2,'0')}</span><h3>${h(session.nome)}</h3></div><div class="session-icon">${icon(index===1?'bolt':'dumbbell')}</div></div><p class="session-subtitle">${h(session.subtitulo || '')}</p><div class="session-details"><span>${icon('layers')} ${session.exercicios.length} exercícios</span><span>${icon('target')} Hipertrofia</span></div>${btn(`${resuming?'Continuar':'Iniciar'} ${icon('arrow')}`,'start','btn-primary btn-block',`data-session="${attr(session.id)}"`)}</article>`;
+    const count=resuming ? completeExercises(state.rascunho) : 0;
+    return `<article class="session-card ${resuming?'session-card-active':''}">
+      <div class="session-card-head"><div><span class="session-code">SESSÃO ${String(index+1).padStart(2,'0')}</span><h3>${h(session.nome)}</h3></div><div class="session-icon">${icon(index===1?'bolt':'dumbbell')}</div></div>
+      <p class="session-subtitle">${h(session.subtitulo || '')}</p>
+      <div class="session-details"><span>${icon('layers')} ${session.exercicios.length} exercícios</span><span>${icon('target')} Hipertrofia</span></div>
+      ${resuming?`<div class="session-progress-note"><span>Em andamento</span><strong>${count}/${session.exercicios.length}</strong></div>`:''}
+      ${btn(`${resuming?'Continuar treino':'Iniciar treino'} ${icon('arrow')}`,'start','btn-primary btn-block',`data-session="${attr(session.id)}"`)}
+    </article>`;
   }
   function renderSessions(){return `<div class="session-grid">${state.sessoes.map(sessionCard).join('')}</div>`;}
+  function renderWeekStrip() {
+    const now = new Date();
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay()+6)%7),12);
+    const todayKey = today();
+    const savedDays = new Set(state.historico.map(r=>r.date));
+    const days = Array.from({length:7}, (_,i) => {
+      const date = new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i,12);
+      const key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+      return {key,number:date.getDate(),trained:savedDays.has(key),today:key===todayKey,weekLabel:['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]};
+    });
+    const count=days.filter(day=>day.trained).length;
+    return `<section class="weekly-panel" aria-label="Treinos desta semana">
+      <div class="weekly-panel-head"><div><div class="small-eyebrow">SUA CONSTÂNCIA</div><h2>Esta semana</h2></div><span class="weekly-count">${icon('calendar')} ${count} ${count===1?'dia treinado':'dias treinados'}</span></div>
+      <div class="week-days">${days.map(day=>`<div class="week-day ${day.trained?'trained':''} ${day.today?'today':''}" aria-label="${day.weekLabel}, dia ${day.number}${day.trained?', treino registrado':''}${day.today?', hoje':''}">
+        <span class="week-day-label">${day.weekLabel}</span><span class="week-day-number">${day.trained?icon('check'):day.number}</span><span class="week-day-dot"></span>
+      </div>`).join('')}</div>
+      <p class="weekly-hint">Cada dia com treino salvo fica marcado em verde.</p>
+    </section>`;
+  }
   function renderHome() {
     const last=sortHistory(state.historico);
-    const finishedLast30=state.historico.filter(r=>{const d=parseDate(r.date); const diff=Date.now()-d.getTime();return diff>=-86400000 && diff < 30*86400000;}).length;
+    const finishedLast30=state.historico.filter(r=>{const d=parseDate(r.date);const diff=Date.now()-d.getTime();return diff>=-86400000 && diff<30*86400000;}).length;
     const completedSets=state.historico.reduce((n,r)=>n+doneSets(r),0);
-    const resume=state.rascunho ? btn(`Continuar ${h(state.rascunho.sessionName)} ${icon('arrow')}`,'resume') : btn(`Escolher treino ${icon('arrow')}`,'choose-training');
-    return `<section class="hero"><div class="eyebrow">SEU PRÓXIMO PASSO</div><h1>Cada série conta.<br><em>Cada evolução também.</em></h1><p>Registre seus treinos, acompanhe suas cargas e descubra o quanto você avançou.</p>${resume}</section>
+    const ongoing=state.rascunho;
+    const completed=ongoing?completeExercises(ongoing):0;
+    const total=ongoing?ongoing.exercises.length:0;
+    const lastSession=last[0]?.sessionId;
+    const lastIndex=state.sessoes.findIndex(session=>session.id===lastSession);
+    const nextSession=state.sessoes.length?state.sessoes[(lastIndex+1)%state.sessoes.length]:null;
+    const current=ongoing?state.sessoes.find(session=>session.id===ongoing.sessionId):nextSession;
+    const title=ongoing?'Seu treino continua.':'Seu próximo treino.';
+    const subtitle=ongoing?`${completed} de ${total} exercícios concluídos · continue de onde parou.`:
+      `${current?.exercicios.length||0} exercícios · ${h(current?.subtitulo||'Vamos começar?')}`;
+    const circlePercent=ongoing && total?Math.round(completed*100/total):0;
+    const primaryAction=ongoing?btn(`Continuar treino ${icon('arrow')}`,'resume','btn-primary'):
+      btn(`Começar treino ${icon('arrow')}`,'choose-training','btn-primary');
+    return `<section class="hero hero-premium">
+      <div class="hero-copy"><div class="eyebrow">${ongoing?'TREINO EM ANDAMENTO':'SEU PRÓXIMO PASSO'}</div>
+      <h1>${title}<br><em>${h(current?.nome||'Vamos treinar?')}</em></h1>
+      <p>${subtitle}</p>
+      <div class="hero-actions">${primaryAction}<span class="hero-secondary">Cada série conta. Cada evolução também.</span></div></div>
+      <div class="hero-visual" aria-hidden="true"><div class="hero-orbit" style="--hero-progress:${circlePercent}%"><span>${icon(ongoing?'check':'dumbbell')}</span></div><small>${ongoing?`${circlePercent}% feito`:'VAMOS EVOLUIR'}</small></div>
+    </section>
     <section class="install-card" id="rep-install-card" aria-label="Instalar aplicativo REP"><div class="install-app-symbol"><span>R<b>·</b></span></div><div class="install-card-copy"><strong>REP no seu celular</strong><span>Adicione à tela inicial e abra como um app.</span></div><button type="button" class="install-app-button" data-install-app>Instalar app <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M5 17v4h14v-4"/></svg></button></section>
-    <section class="stat-grid"><div class="stat-card"><div class="stat-top">Treinos salvos ${icon('calendar')}</div><div><div class="stat-value">${state.historico.length}</div><div class="stat-caption">no histórico</div></div></div><div class="stat-card"><div class="stat-top">Últimos 30 dias ${icon('bolt')}</div><div><div class="stat-value">${finishedLast30}</div><div class="stat-caption">sessões realizadas</div></div></div><div class="stat-card"><div class="stat-top">Séries concluídas ${icon('check')}</div><div><div class="stat-value">${completedSets}</div><div class="stat-caption">séries registradas</div></div></div></section>
-    <div class="section-heading"><div><h2>Seu plano de treino</h2><p>Rotina: ${h(SOURCE.nome)} · ${h(SOURCE.nivel)}</p></div><button class="mini-link" data-action="open-routine">Ver ficha ${icon('arrow')}</button></div>${renderSessions()}
-    <div class="summary-grid"><section class="card"><div class="card-title">Últimas sessões</div>${last.length?last.slice(0,3).map(r=>`<div class="recent-row"><div><div class="title">${h(r.sessionName)}</div><div class="subtitle">${dateText(r.date)}</div></div><div class="right"><strong>${completeExercises(r)}/${r.exercises.length}</strong><span>exercícios concluídos</span></div></div>`).join(''):`<div class="empty-state">${icon('calendar')}<h3>A jornada começa aqui</h3><p>Depois do primeiro treino salvo, suas sessões aparecem neste espaço.</p></div>`}</section><section class="card"><div class="card-title">Seu espaço, seus dados</div><div class="info-strip" style="margin:0">${icon('shield')}<div><p><strong>Sem cadastro ou assinatura.</strong></p><p>Seus registros são armazenados neste navegador. Faça backups periódicos em Minha ficha para não perder o histórico ao trocar de aparelho.</p></div></div><button class="mini-link" data-action="open-routine" style="margin-top:12px">Gerenciar ficha e backup ${icon('arrow')}</button></section></div>`;
+    <section class="stat-grid" aria-label="Resumo dos treinos">
+      <div class="stat-card"><div class="stat-top">Treinos salvos ${icon('calendar')}</div><div><div class="stat-value">${state.historico.length}</div><div class="stat-caption">no histórico</div></div></div>
+      <div class="stat-card"><div class="stat-top">Últimos 30 dias ${icon('bolt')}</div><div><div class="stat-value">${finishedLast30}</div><div class="stat-caption">sessões realizadas</div></div></div>
+      <div class="stat-card"><div class="stat-top">Séries concluídas ${icon('check')}</div><div><div class="stat-value">${completedSets}</div><div class="stat-caption">séries registradas</div></div></div>
+    </section>
+    ${renderWeekStrip()}
+    <div class="section-heading"><div><h2>Seus treinos</h2><p>Escolha sua próxima sessão e acompanhe cada exercício.</p></div><button class="mini-link" data-action="open-routine">Ver ficha ${icon('arrow')}</button></div>${renderSessions()}
+    <div class="summary-grid"><section class="card"><div class="card-title">Últimas sessões</div>${last.length?last.slice(0,3).map(r=>`<div class="recent-row"><div><div class="title">${h(r.sessionName)}</div><div class="subtitle">${dateText(r.date)}</div></div><div class="right"><strong>${completeExercises(r)}/${r.exercises.length}</strong><span>exercícios concluídos</span></div></div>`).join(''):`<div class="empty-state">${icon('calendar')}<h3>A jornada começa aqui</h3><p>Depois do primeiro treino salvo, suas sessões aparecem neste espaço.</p></div>`}</section>
+    <section class="card"><div class="card-title">Seu espaço, seus dados</div><div class="info-strip" style="margin:0">${icon('shield')}<div><p><strong>Sem cadastro ou assinatura.</strong></p><p>Seus registros são armazenados neste navegador. Faça backups periódicos em Minha ficha para não perder o histórico ao trocar de aparelho.</p></div></div><button class="mini-link" data-action="open-routine" style="margin-top:12px">Gerenciar ficha e backup ${icon('arrow')}</button></section></div>`;
   }
 
   function makeEntry(exercise) {
@@ -237,12 +290,44 @@
     const form=inputs.map(([field,label,type,value])=>`<label class="${field==='intensidade'?'wide':''}"><span>${h(label)}</span><input type="${type}" ${type==='number'?'min="0" step="any" inputmode="decimal"':''} value="${attr(value)}" placeholder="—" data-set-ex="${index}" data-set-index="0" data-set-field="${field}" aria-label="${h(label)} de ${h(ex.nome)}"></label>`).join('');
     return `<div class="cardio-grid">${form}</div><div class="exercise-footer"><span class="hint">Registre tempo e nível/intensidade realmente realizados.</span><button type="button" class="btn btn-small ${set.done?'btn-primary':'btn-plain'}" data-action="toggle-set" data-ex="${index}" data-set="0">${icon('check')} ${set.done?'Concluído':'Concluir atividade'}</button></div>`;
   }
+  function latestExerciseSummary(exercise) {
+    const history=sortHistory(state.historico);
+    for (const record of history) {
+      const matching=record.exercises.find(entry=>entry.exercise.id===exercise.id);
+      if (!matching) continue;
+      const done=matching.sets.filter(set=>set.done);
+      if (!done.length) continue;
+      if (exercise.tipo==='cardio') {
+        const minutes=done.map(set=>asNumber(set.minutos)).find(value=>value!==null);
+        return minutes===undefined?'Último treino registrado':`Último registro: ${decimal(minutes)} min`;
+      }
+      const best=done.reduce((found,set)=>{
+        const load=asNumber(set.carga);
+        return load!==null && (found===null || load>found)?load:found;
+      },null);
+      const reps=done.map(set=>asNumber(set.reps)).find(value=>value!==null);
+      const time=done.map(set=>asNumber(set.segundos)).find(value=>value!==null);
+      if (exercise.tipo==='tempo') return best!==null?`Último registro: ${decimal(best)} kg`:time!==undefined?`Último registro: ${decimal(time)} s`:'Último treino registrado';
+      return best!==null?`Última carga: ${decimal(best)} kg`:reps!==undefined?`Último registro: ${decimal(reps)} rep`:'Último treino registrado';
+    }
+    return 'Primeira vez neste exercício';
+  }
+
   function renderExercise(entry,index) {
     const ex=entry.exercise;
     const completed=currentCompletion(entry);
     const metric=ex.tipo==='cardio'?'CARDIO':ex.tipo==='tempo'?'ISOMETRIA':'MUSCULAÇÃO';
     const controls=ex.tipo==='cardio'?cardioFields(entry,index):`<div class="set-table">${entry.sets.map((_,i)=>setRow(ex,entry,index,i)).join('')}</div><div class="exercise-footer"><span class="hint">${ex.intervalo != null?`Intervalo: ${h(ex.intervaloOriginal||`${ex.intervalo}s`)}`:'Sem intervalo informado'}</span><div class="exercise-actions">${ex.intervalo != null?`<div class="rest-config"><label><span>Descanso (s)</span><input type="number" inputmode="numeric" min="1" max="3600" step="1" value="${attr(state.restPreferences?.[ex.id] ?? ex.intervalo)}" data-rest-seconds="${attr(ex.id)}" aria-label="Tempo de descanso, em segundos, para ${attr(ex.nome)}"></label>${btn(`${icon('clock')} Iniciar descanso`,'rest','btn-plain btn-small',`data-rest-ex="${attr(ex.id)}" data-default-seconds="${Number(ex.intervalo)||0}"`)}</div>`:''}${btn(`${icon('check')} ${completed?'Desmarcar':'Concluir exercício'}`,'toggle-exercise',`btn-small ${completed?'btn-primary':'btn-ghost'}`,`data-ex="${index}"`)}</div></div>`;
-    return `<article class="exercise-card ${completed?'is-complete':''}" id="entry-${index}"><div class="exercise-header"><div><div class="exercise-number">EXERCÍCIO ${String(index+1).padStart(2,'0')} · ${metric}</div><div class="exercise-name">${h(ex.nome)}</div></div><span class="tag ${completed?'tag-accent':''}">${completed?icon('check'):icon('layers')} ${completed?'Feito':`${entry.sets.length} ${entry.sets.length===1?'bloco':'séries'}`}</span></div>${renderExerciseMeta(ex)}${controls}</article>`;
+    const doneCount=entry.sets.filter(set=>set.done).length;
+    const progress=Math.round(doneCount*100/entry.sets.length);
+    return `<article class="exercise-card ${completed?'is-complete':''}" id="entry-${index}">
+      <div class="exercise-header"><div><div class="exercise-number">EXERCÍCIO ${String(index+1).padStart(2,'0')} · ${metric}</div><div class="exercise-name">${h(ex.nome)}</div></div>
+      <span class="tag ${completed?'tag-accent':''}">${completed?icon('check'):icon('layers')} ${completed?'Concluído':`${entry.sets.length} ${entry.sets.length===1?'bloco':'séries'}`}</span></div>
+      <div class="exercise-insights"><span>${icon('chart')} ${h(latestExerciseSummary(ex))}</span><span class="exercise-count">${doneCount}/${entry.sets.length} séries</span></div>
+      <div class="exercise-mini-track" role="progressbar" aria-label="Progresso de ${attr(ex.nome)}" aria-valuemin="0" aria-valuemax="${entry.sets.length}" aria-valuenow="${doneCount}"><span style="width:${progress}%"></span></div>
+      ${renderExerciseMeta(ex)}${controls}
+    </article>`;
+
   }
 
   function renderHistory(){
@@ -298,14 +383,22 @@
       ui.progressExercise=first?.id || '';
     }
     const current=all.find(e=>e.id===ui.progressExercise);
-    const points=current?getSeries(current.id):[];
+    const allPoints=current?getSeries(current.id):[];
+    const days=ui.progressRange==='30'?30:ui.progressRange==='90'?90:null;
+    const cutoff=days===null?null:Date.now()-days*86400000;
+    const points=cutoff===null?allPoints:allPoints.filter(point=>parseDate(point.date).getTime()>=cutoff);
     const first=points[0]?.max;
     const last=points[points.length-1]?.max;
-    const max=points.length?Math.max(...points.map(p=>p.max)):null;
+    const max=points.length?Math.max(...points.map(point=>point.max)):null;
+    const personalRecord=allPoints.length?Math.max(...allPoints.map(point=>point.max)):null;
     const diff=points.length>1?+(last-first).toFixed(2):null;
     const select=`<label class="chart-selector"><span class="field-label">EXERCÍCIO</span><select id="progress-select" aria-label="Selecionar exercício para ver evolução">${all.map(e=>`<option value="${attr(e.id)}" ${e.id===ui.progressExercise?'selected':''}>${h(e.nome)}</option>`).join('')}</select></label>`;
-    return `${heading('ACOMPANHE SUA EVOLUÇÃO','O progresso nos detalhes.','O gráfico usa a maior carga de uma série concluída em cada sessão salva. Cargas de pares e cargas por lado seguem os valores registrados, sem conversão automática.')}
-    ${select}<div class="chart-layout"><section class="card chart-card"><div class="chart-header"><div><div class="chart-title">Maior carga registrada</div><div class="chart-peak">${max===null?'—':`${decimal(max)} <span style="font-size:15px;letter-spacing:0;color:#95aab4">kg</span>`}</div><div class="chart-note">${current?h(current.nome):'Escolha um exercício'}</div></div><span class="tag">${points.length} ${points.length===1?'sessão':'sessões'} com dados</span></div>${drawChart(points)}</section><aside class="card chart-summary"><div class="card-title">Resumo do exercício</div><div class="mini-stat"><small>Primeiro registro</small><strong>${first==null?'—':`${decimal(first)} kg`}</strong></div><div class="mini-stat"><small>Último registro</small><strong>${last==null?'—':`${decimal(last)} kg`}</strong></div><div class="mini-stat"><small>Variação entre registros</small><strong class="${diff>=0?'success-text':'text-danger'}">${diff==null?'—':`${diff>0?'+':''}${decimal(diff)} kg`}</strong></div><p class="small muted">O gráfico considera apenas séries marcadas como concluídas. A carga é a que você registrou, não necessariamente uma carga total do equipamento.</p></aside></div>`;
+    const filters=`<div class="chart-range" role="group" aria-label="Período do gráfico">${[['30','30 dias'],['90','90 dias'],['all','Tudo']].map(([range,label])=>`<button type="button" data-action="progress-range" data-value="${range}" class="${ui.progressRange===range?'active':''}" aria-pressed="${ui.progressRange===range}">${label}</button>`).join('')}</div>`;
+    return `${heading('ACOMPANHE SUA EVOLUÇÃO','Sua evolução, em números.','Acompanhe suas cargas e descubra seus recordes. O gráfico usa os valores reais das séries concluídas, sem conversões automáticas.')}
+    <div class="progress-controls">${select}${filters}</div>
+    ${personalRecord!==null?`<div class="record-banner"><span class="record-icon">${icon('trophy')}</span><div><small>RECORDE PESSOAL · ${h(current?.nome||'Exercício')}</small><strong>${decimal(personalRecord)} kg</strong></div><span class="record-label">MELHOR MARCA</span></div>`:''}
+    <div class="chart-layout"><section class="card chart-card"><div class="chart-header"><div><div class="chart-title">Maior carga no período</div><div class="chart-peak">${max===null?'—':`${decimal(max)} <span style="font-size:15px;letter-spacing:0;color:#95aab4">kg</span>`}</div><div class="chart-note">${current?h(current.nome):'Escolha um exercício'}</div></div><span class="tag">${points.length} ${points.length===1?'sessão':'sessões'} com dados</span></div>${drawChart(points)}</section>
+    <aside class="card chart-summary"><div class="card-title">Resumo do período</div><div class="mini-stat"><small>Primeiro registro</small><strong>${first==null?'—':`${decimal(first)} kg`}</strong></div><div class="mini-stat"><small>Último registro</small><strong>${last==null?'—':`${decimal(last)} kg`}</strong></div><div class="mini-stat"><small>Variação entre registros</small><strong class="${diff==null?'':diff>=0?'success-text':'text-danger'}">${diff==null?'—':`${diff>0?'+':''}${decimal(diff)} kg`}</strong></div><p class="small muted">Os números representam as cargas registradas, não necessariamente a carga total do equipamento.</p></aside></div>`;
   }
 
   function renderRoutine(){
@@ -398,14 +491,29 @@
     restEnd=Date.now()+seconds*1000;
     let element=document.getElementById('rest-timer');
     if(!element){element=document.createElement('div');element.id='rest-timer';element.setAttribute('role','status');element.setAttribute('aria-live','polite');document.body.appendChild(element);}
+    element.className='rest-timer rest-floating';
+    element.innerHTML=`<div class="rest-clock" style="--rest-progress:0"><strong class="rest-clock-time">00:00</strong></div>
+      <div class="rest-copy"><small class="rest-caption">DESCANSO EM ANDAMENTO</small><span class="rest-description">Recupere o fôlego para a próxima série.</span></div>
+      <button type="button" class="btn btn-small" data-action="stop-rest">Fechar</button>`;
+    const time=element.querySelector('.rest-clock-time');
+    const ring=element.querySelector('.rest-clock');
+    const caption=element.querySelector('.rest-caption');
+    const description=element.querySelector('.rest-description');
     let finished=false;
+    let previousLeft=-1;
     const tick=()=>{
       if(restEnd===0 || !element.isConnected)return;
       const left=Math.max(0,Math.ceil((restEnd-Date.now())/1000));
-      element.className=`rest-timer ${left===0?'rest-finished':''}`;
-      element.innerHTML=`<small>${left===0?'TEMPO ENCERRADO':'DESCANSO'}</small><strong>${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}</strong><button type="button" class="btn btn-small" data-action="stop-rest">Fechar</button>`;
+      if (left!==previousLeft) {
+        previousLeft=left;
+        time.textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;
+        ring.style.setProperty('--rest-progress',`${Math.min(100,Math.max(0,(seconds-left)/seconds*100))}%`);
+      }
       if(left===0 && !finished){
         finished=true;
+        element.classList.add('rest-finished');
+        caption.textContent='DESCANSO FINALIZADO';
+        description.textContent='Hora de continuar seu treino!';
         clearInterval(restInterval);
         restInterval=null;
         notifyRestFinished();
@@ -480,6 +588,7 @@
     if(action==='choose-training'){navigate('training');return;}
     if(action==='open-routine'){navigate('routine');return;}
     if(action==='filter-history'){ui.historyFilter=el.dataset.value;render();return;}
+    if(action==='progress-range'){ui.progressRange=['30','90','all'].includes(el.dataset.value)?el.dataset.value:'all';render();return;}
     if(action==='close-modal'||action==='close-modal-backdrop'){ui.modal=null;document.getElementById('modal-root').innerHTML='';return;}
     if(action==='test-rest-alert'){
       if(state.vibrarDescanso===false){toast('Ative o alerta para testar.');return;}
